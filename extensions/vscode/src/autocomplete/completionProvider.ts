@@ -11,6 +11,7 @@ import type { TabAutocompleteModel } from "../util/loadAutocompleteModel";
 import { getDefinitionsFromLsp } from "./lsp";
 import { RecentlyEditedTracker } from "./recentlyEdited";
 import { setupStatusBar, stopStatusBarLoading } from "./statusBar";
+import { integer } from "vscode-languageclient";
 
 interface VsCodeCompletionInput {
   document: vscode.TextDocument;
@@ -39,21 +40,27 @@ export class ContinueCompletionProvider
     });
   }
 
-  private completionProvider: CompletionProvider;
+  private completionProviders: CompletionProvider[] = [];
   private recentlyEditedTracker = new RecentlyEditedTracker();
 
   constructor(
     private readonly configHandler: ConfigHandler,
     private readonly ide: IDE,
-    private readonly tabAutocompleteModel: TabAutocompleteModel,
+    private readonly tabAutocompleteModels: TabAutocompleteModel[],
   ) {
-    this.completionProvider = new CompletionProvider(
-      this.configHandler,
-      this.ide,
-      this.tabAutocompleteModel.get.bind(this.tabAutocompleteModel),
-      this.onError.bind(this),
-      getDefinitionsFromLsp,
-    );
+    // Wayne TODO change this to create multiple completion providers
+    // one for each model
+    // Also make the tabAutocompleteModel multiple models.
+    for (const tabAutocompleteModel of tabAutocompleteModels) {
+      this.completionProviders.push(new CompletionProvider(
+        this.configHandler,
+        this.ide,
+        tabAutocompleteModel.get.bind(tabAutocompleteModel),
+        this.onError.bind(this),
+        getDefinitionsFromLsp,
+      ));
+    }
+    // TODO Test that the models are being loaded correctly / multiple models are being loaded.
 
     vscode.workspace.onDidChangeTextDocument((event) => {
       if (event.document.uri.fsPath === this._lastShownCompletion?.filepath) {
@@ -196,11 +203,23 @@ export class ContinueCompletionProvider
       };
 
       setupStatusBar(true, true);
+      // TODO: Wayne. This is where the inline completion happens in the vscode extension.
+      // It calls on the inline competion items function in core
+      const randomInt = (min: integer, max: integer) => 
+        Math.floor(Math.random() * (max - min + 1)) + min;
+      const providerIndex = randomInt(0, this.completionProviders.length - 1);
+
       const outcome =
-        await this.completionProvider.provideInlineCompletionItems(
+        await this.completionProviders[providerIndex].provideInlineCompletionItems(
           input,
           signal,
-        );
+      );
+
+      if (outcome) {
+        console.log(outcome.completion);
+        console.log(outcome.modelName);
+        console.log(outcome.modelProvider);
+      }
 
       if (!outcome || !outcome.completion) {
         return null;
@@ -233,7 +252,7 @@ export class ContinueCompletionProvider
       }
 
       // Mark displayed
-      this.completionProvider.markDisplayed(input.completionId, outcome);
+      this.completionProviders[providerIndex].markDisplayed(input.completionId, outcome);
       this._lastShownCompletion = outcome;
 
       // Construct the range/text to show
@@ -242,18 +261,33 @@ export class ContinueCompletionProvider
         startPos,
         startPos.translate(0, outcome.completion.length),
       );
-      const completionItem = new vscode.InlineCompletionItem(
+
+      const completionItem1 = new vscode.InlineCompletionItem(
         outcome.completion,
         completionRange,
         {
           title: "Log Autocomplete Outcome",
           command: "continue.logAutocompleteOutcome",
-          arguments: [input.completionId, this.completionProvider],
+          arguments: [input.completionId, this.completionProviders[providerIndex]],
         },
       );
 
-      (completionItem as any).completeBracketPairs = true;
-      return [completionItem];
+      (completionItem1 as any).completeBracketPairs = true;
+
+      const completionItem2 = new vscode.InlineCompletionItem(
+        "testing456",
+        //outcome.completion,
+        completionRange,
+        {
+          title: "Log Autocomplete Outcome",
+          command: "continue.logAutocompleteOutcome",
+          arguments: [input.completionId, this.completionProviders[providerIndex]],
+        },
+      );
+
+      (completionItem2 as any).completeBracketPairs = true;
+
+      return [completionItem1, completionItem2];
     } finally {
       stopStatusBarLoading();
     }

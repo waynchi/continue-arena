@@ -782,6 +782,7 @@ export interface SerializedContinueConfig {
   userToken?: string;
   embeddingsProvider?: EmbeddingsProviderDescription;
   tabAutocompleteModel?: ModelDescription;
+  tabAutocompleteModels?: ModelDescription[];
   tabAutocompleteOptions?: Partial<TabAutocompleteOptions>;
   ui?: ContinueUIConfig;
   reranker?: RerankerDescription;
@@ -824,6 +825,8 @@ export interface Config {
   embeddingsProvider?: EmbeddingsProviderDescription | EmbeddingsProvider;
   /** The model that Continue will use for tab autocompletions. */
   tabAutocompleteModel?: CustomLLM | ModelDescription;
+  /** The models that Continue (Research) will use for tab autocompletions. */
+  tabAutocompleteModels?: (CustomLLM | ModelDescription)[];
   /** Options for tab autocomplete */
   tabAutocompleteOptions?: Partial<TabAutocompleteOptions>;
   /** UI styles customization */
@@ -834,6 +837,7 @@ export interface Config {
   experimental?: ExperimentalConfig;
 }
 
+// Wayne Probably have to modify
 export interface ContinueConfig {
   allowAnonymousTelemetry?: boolean;
   models: ILLM[];
@@ -847,6 +851,7 @@ export interface ContinueConfig {
   userToken?: string;
   embeddingsProvider: EmbeddingsProvider;
   tabAutocompleteModel?: ILLM;
+  tabAutocompleteModels?: ILLM[];
   tabAutocompleteOptions?: Partial<TabAutocompleteOptions>;
   ui?: ContinueUIConfig;
   reranker?: Reranker;

@@ -191,6 +191,68 @@ function isContextProviderWithParams(
   return (contextProvider as ContextProviderWithParams).name !== undefined;
 }
 
+async function createAutocompleteLlm(
+  tabModel: CustomLLM | ModelDescription,
+  config: Config,
+  ide: IDE,
+  ideSettings: IdeSettings,
+  uniqueId: string,
+  writeLog: (log: string) => Promise<void>,
+): Promise<BaseLLM | undefined> {
+  let autocompleteLlm: BaseLLM | undefined = undefined;
+
+  if (isModelDescription(tabModel)) {
+    autocompleteLlm = await llmFromDescription(
+      tabModel,
+      ide.readFile.bind(ide),
+      uniqueId,
+      ideSettings,
+      writeLog,
+      config.completionOptions,
+      config.systemMessage,
+    );
+
+    if (autocompleteLlm?.providerName === "free-trial") {
+      const ghAuthToken = await ide.getGitHubAuthToken();
+      (autocompleteLlm as FreeTrial).setupGhAuthToken(ghAuthToken);
+    }
+  } else {
+    autocompleteLlm = new CustomLLMClass(tabModel);
+  }
+
+  return autocompleteLlm;
+}
+
+async function createAutocompleteLlms(
+  config: Config,
+  ide: IDE,
+  ideSettings: IdeSettings,
+  uniqueId: string,
+  writeLog: (log: string) => Promise<void>,
+): Promise<BaseLLM[] | undefined> {
+  if (config.tabAutocompleteModels) {
+    const llms: BaseLLM[] = [];
+
+    for (const tabModel of config.tabAutocompleteModels) {
+      const llm = await createAutocompleteLlm(
+        tabModel, 
+        config, 
+        ide, 
+        ideSettings, 
+        uniqueId, 
+        writeLog
+      );
+      if (llm) {
+        llms.push(llm);
+      }
+    }
+
+    return llms.length ? llms : undefined;
+  }
+
+  return undefined;
+}
+
 /** Only difference between intermediate and final configs is the `models` array */
 async function intermediateToFinalConfig(
   config: Config,
@@ -295,24 +357,25 @@ async function intermediateToFinalConfig(
   // Tab autocomplete model
   let autocompleteLlm: BaseLLM | undefined = undefined;
   if (config.tabAutocompleteModel) {
-    if (isModelDescription(config.tabAutocompleteModel)) {
-      autocompleteLlm = await llmFromDescription(
-        config.tabAutocompleteModel,
-        ide.readFile.bind(ide),
-        uniqueId,
-        ideSettings,
-        writeLog,
-        config.completionOptions,
-        config.systemMessage,
-      );
+    autocompleteLlm = await createAutocompleteLlm(
+      config.tabAutocompleteModel,
+      config,
+      ide,
+      ideSettings,
+      uniqueId,
+      writeLog
+    );
+  }
 
-      if (autocompleteLlm?.providerName === "free-trial") {
-        const ghAuthToken = await ide.getGitHubAuthToken();
-        (autocompleteLlm as FreeTrial).setupGhAuthToken(ghAuthToken);
-      }
-    } else {
-      autocompleteLlm = new CustomLLMClass(config.tabAutocompleteModel);
-    }
+  let autocompleteLlms: BaseLLM[] | undefined = undefined;
+  if (config.tabAutocompleteModels) {
+    autocompleteLlms = await createAutocompleteLlms(
+      config,
+      ide,
+      ideSettings,
+      uniqueId,
+      writeLog
+    );
   }
 
   // Context providers
@@ -382,6 +445,7 @@ async function intermediateToFinalConfig(
     models,
     embeddingsProvider: config.embeddingsProvider as any,
     tabAutocompleteModel: autocompleteLlm,
+    tabAutocompleteModels: autocompleteLlms,
     reranker: config.reranker as any,
   };
 }

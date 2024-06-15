@@ -27,7 +27,7 @@ export class VsCodeExtension {
   private configHandler: ConfigHandler;
   private extensionContext: vscode.ExtensionContext;
   private ide: VsCodeIde;
-  private tabAutocompleteModel: TabAutocompleteModel;
+  private tabAutocompleteModels: TabAutocompleteModel[] = [];
   private sidebar: ContinueGUIWebviewViewProvider;
   private windowId: string;
   private diffManager: DiffManager;
@@ -113,7 +113,13 @@ export class VsCodeExtension {
       this.configHandler,
     );
     resolveVerticalDiffManager?.(this.verticalDiffManager);
-    this.tabAutocompleteModel = new TabAutocompleteModel(this.configHandler);
+    // Wayne This is where the model is picked
+    // Need to make this return multiple?
+    // Need to make this not a magic number
+    // this.configHandler.loadConfig() // This is async... 
+    for (let i = 0; i < 2; i++) {
+      this.tabAutocompleteModels.push(new TabAutocompleteModel(this.configHandler));
+    }
 
     setupRemoteConfigSync(
       this.configHandler.reloadConfig.bind(this.configHandler),
@@ -143,7 +149,7 @@ export class VsCodeExtension {
         new ContinueCompletionProvider(
           this.configHandler,
           this.ide,
-          this.tabAutocompleteModel,
+          this.tabAutocompleteModels,
         ),
       ),
     );
@@ -165,11 +171,15 @@ export class VsCodeExtension {
     // from outside the window are also caught
     fs.watchFile(getConfigJsonPath(), { interval: 1000 }, (stats) => {
       this.configHandler.reloadConfig();
-      this.tabAutocompleteModel.clearLlm();
+      for (const model of this.tabAutocompleteModels) {
+        model.clearLlm();
+      }
     });
     fs.watchFile(getConfigTsPath(), { interval: 1000 }, (stats) => {
       this.configHandler.reloadConfig();
-      this.tabAutocompleteModel.clearLlm();
+      for (const model of this.tabAutocompleteModels) {
+        model.clearLlm();
+      }
     });
 
     vscode.workspace.onDidSaveTextDocument((event) => {
@@ -181,7 +191,9 @@ export class VsCodeExtension {
         filepath.endsWith(".prompt")
       ) {
         this.configHandler.reloadConfig();
-        this.tabAutocompleteModel.clearLlm();
+        for (const model of this.tabAutocompleteModels) {
+          model.clearLlm();
+        }
       } else if (
         filepath.endsWith(".continueignore") ||
         filepath.endsWith(".gitignore")

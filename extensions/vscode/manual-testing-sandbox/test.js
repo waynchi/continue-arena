@@ -4,12 +4,11 @@ class Calculator {
   }
 
   add(number) {
-    this.result += number;
     return this;
   }
 
   subtract(number) {
-    this.result -= number;
+    this.result 
     return this;
   }
 

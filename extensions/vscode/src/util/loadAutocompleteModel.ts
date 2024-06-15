@@ -4,6 +4,8 @@ import Ollama from "core/llm/llms/Ollama";
 import * as vscode from "vscode";
 
 export class TabAutocompleteModel {
+  private static instanceCount = 0; // Static counter
+  private instanceNumber = 0; // Local counter
   private _llm: ILLM | undefined;
   private defaultTag = "starcoder2:3b";
   private defaultTagName = "Starcoder2 3b";
@@ -15,6 +17,8 @@ export class TabAutocompleteModel {
 
   constructor(configHandler: ConfigHandler) {
     this.configHandler = configHandler;
+    this.instanceNumber = TabAutocompleteModel.instanceCount;
+    TabAutocompleteModel.instanceCount++;
   }
 
   clearLlm() {
@@ -79,9 +83,14 @@ export class TabAutocompleteModel {
   }
 
   async get() {
+    // Wayne TODO Add a static counter and a local counter. 
+    // The local counter is stored when the instance is created and used for retrieval.
+    // Static counter used to 
     if (!this._llm) {
       const config = await this.configHandler.loadConfig();
-      if (config.tabAutocompleteModel) {
+      if (config.tabAutocompleteModels) {
+        this._llm = config.tabAutocompleteModels[this.instanceNumber];
+      } else if (config.tabAutocompleteModel) {
         this._llm = config.tabAutocompleteModel;
       } else {
         this._llm = await this.getDefaultTabAutocompleteModel();
