@@ -726,6 +726,7 @@ declare global {
     userToken?: string;
     embeddingsProvider?: EmbeddingsProviderDescription;
     tabAutocompleteModel?: ModelDescription;
+    tabAutocompleteModels?: ModelDescription[];
     tabAutocompleteOptions?: Partial<TabAutocompleteOptions>;
     ui?: ContinueUIConfig;
     reranker?: RerankerDescription;
@@ -768,6 +769,8 @@ declare global {
     embeddingsProvider?: EmbeddingsProviderDescription | EmbeddingsProvider;
     /** The model that Continue will use for tab autocompletions. */
     tabAutocompleteModel?: CustomLLM | ModelDescription;
+    /** The models that Continue (research) will use for tab autocompletions. */
+    tabAutocompleteModels?: (CustomLLM | ModelDescription)[];
     /** Options for tab autocomplete */
     tabAutocompleteOptions?: Partial<TabAutocompleteOptions>;
     /** UI styles customization */
@@ -791,6 +794,7 @@ declare global {
     userToken?: string;
     embeddingsProvider: EmbeddingsProvider;
     tabAutocompleteModel?: ILLM;
+    tabAutocompleteModels?: ILLM[];
     tabAutocompleteOptions?: Partial<TabAutocompleteOptions>;
     ui?: ContinueUIConfig;
     reranker?: Reranker;

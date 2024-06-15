@@ -5,6 +5,8 @@ import { GlobalContext } from "core/util/GlobalContext";
 import * as vscode from "vscode";
 
 export class TabAutocompleteModel {
+  private static instanceCount = 0; // Static counter
+  private instanceNumber = 0; // Local counter
   private _llm: ILLM | undefined;
   private defaultTag = "starcoder2:3b";
   private defaultTagName = "Starcoder2 3b";
@@ -17,6 +19,8 @@ export class TabAutocompleteModel {
 
   constructor(configHandler: ConfigHandler) {
     this.configHandler = configHandler;
+    this.instanceNumber = TabAutocompleteModel.instanceCount;
+    TabAutocompleteModel.instanceCount++;
   }
 
   clearLlm() {
@@ -81,24 +85,12 @@ export class TabAutocompleteModel {
   }
 
   async get() {
+    // Wayne TODO Add a static counter and a local counter.
+    // The local counter is stored when the instance is created and used for retrieval.
     if (!this._llm) {
       const config = await this.configHandler.loadConfig();
-      if (config.tabAutocompleteModels?.length) {
-        const selected = this.globalContext.get("selectedTabAutocompleteModel");
-        if (selected) {
-          this._llm =
-            config.tabAutocompleteModels?.find(
-              (model) => model.title === selected,
-            ) ?? config.tabAutocompleteModels?.[0];
-        } else {
-          if (config.tabAutocompleteModels[0].title) {
-            this.globalContext.update(
-              "selectedTabAutocompleteModel",
-              config.tabAutocompleteModels[0].title,
-            );
-          }
-          this._llm = config.tabAutocompleteModels[0];
-        }
+      if (config.tabAutocompleteModels) {
+        this._llm = config.tabAutocompleteModels[this.instanceNumber];
       } else {
         this._llm = await this.getDefaultTabAutocompleteModel();
       }

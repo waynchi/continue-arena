@@ -168,7 +168,7 @@ export interface SiteIndexingConfig {
   rootUrl: string;
   title: string;
   maxDepth?: number;
-  faviconUrl?: string;
+  faviconUrl: string;
 }
 
 export interface IContextProvider {
@@ -784,7 +784,8 @@ export interface SerializedContinueConfig {
   disableSessionTitles?: boolean;
   userToken?: string;
   embeddingsProvider?: EmbeddingsProviderDescription;
-  tabAutocompleteModel?: ModelDescription | ModelDescription[];
+  tabAutocompleteModel?: ModelDescription;
+  tabAutocompleteModels?: ModelDescription[];
   tabAutocompleteOptions?: Partial<TabAutocompleteOptions>;
   ui?: ContinueUIConfig;
   reranker?: RerankerDescription;
@@ -826,10 +827,9 @@ export interface Config {
   /** The provider used to calculate embeddings. If left empty, Continue will use transformers.js to calculate the embeddings with all-MiniLM-L6-v2 */
   embeddingsProvider?: EmbeddingsProviderDescription | EmbeddingsProvider;
   /** The model that Continue will use for tab autocompletions. */
-  tabAutocompleteModel?:
-    | CustomLLM
-    | ModelDescription
-    | (CustomLLM | ModelDescription)[];
+  tabAutocompleteModel?: CustomLLM | ModelDescription;
+  /** The models that Continue (Research) will use for tab autocompletions. */
+  tabAutocompleteModels?: (CustomLLM | ModelDescription)[];
   /** Options for tab autocomplete */
   tabAutocompleteOptions?: Partial<TabAutocompleteOptions>;
   /** UI styles customization */
@@ -840,6 +840,7 @@ export interface Config {
   experimental?: ExperimentalConfig;
 }
 
+// Wayne Probably have to modify
 export interface ContinueConfig {
   allowAnonymousTelemetry?: boolean;
   models: ILLM[];
@@ -852,6 +853,7 @@ export interface ContinueConfig {
   disableIndexing?: boolean;
   userToken?: string;
   embeddingsProvider: EmbeddingsProvider;
+  tabAutocompleteModel?: ILLM;
   tabAutocompleteModels?: ILLM[];
   tabAutocompleteOptions?: Partial<TabAutocompleteOptions>;
   ui?: ContinueUIConfig;

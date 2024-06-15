@@ -27,7 +27,7 @@ export class VsCodeExtension {
   private configHandler: ConfigHandler;
   private extensionContext: vscode.ExtensionContext;
   private ide: VsCodeIde;
-  private tabAutocompleteModel: TabAutocompleteModel;
+  private tabAutocompleteModels: TabAutocompleteModel[] = [];
   private sidebar: ContinueGUIWebviewViewProvider;
   private windowId: string;
   private diffManager: DiffManager;
@@ -113,7 +113,12 @@ export class VsCodeExtension {
       this.configHandler,
     );
     resolveVerticalDiffManager?.(this.verticalDiffManager);
-    this.tabAutocompleteModel = new TabAutocompleteModel(this.configHandler);
+    // Wayne This is where the model is picked
+    // Need to make this return multiple?
+    // Need to make this not a magic number
+    for (let i = 0; i < 2; i++) {
+      this.tabAutocompleteModels.push(new TabAutocompleteModel(this.configHandler));
+    }
 
     setupRemoteConfigSync(
       this.configHandler.reloadConfig.bind(this.configHandler),
@@ -143,7 +148,7 @@ export class VsCodeExtension {
         new ContinueCompletionProvider(
           this.configHandler,
           this.ide,
-          this.tabAutocompleteModel,
+          this.tabAutocompleteModels,
         ),
       ),
     );
@@ -171,9 +176,11 @@ export class VsCodeExtension {
       this.configHandler.reloadConfig();
     });
 
-    this.configHandler.onConfigUpdate(
-      this.tabAutocompleteModel.clearLlm.bind(this.tabAutocompleteModel),
-    );
+    for (const model of this.tabAutocompleteModels) {
+      this.configHandler.onConfigUpdate(
+        model.clearLlm.bind(model),
+      );
+    }
 
     vscode.workspace.onDidSaveTextDocument((event) => {
       // Listen for file changes in the workspace
