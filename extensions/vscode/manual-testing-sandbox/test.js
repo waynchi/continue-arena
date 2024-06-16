@@ -3,10 +3,6 @@ class Calculator {
     this.result = 0;
   }
 
-  add(number) {
-    return this;
-  }
-
   subtract(number) {
     this.result 
     return this;

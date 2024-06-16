@@ -195,7 +195,7 @@ export async function getTabCompletion(
     );
   }
 
-  // Prompt
+  // Prompt full is the entire file
   let fullPrefix =
     getRangeInString(fileContents, {
       start: { line: 0, character: 0 },

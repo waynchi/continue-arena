@@ -103,6 +103,7 @@ async function shouldCompleteMultiline(
   return completeMultiline;
 }
 
+// Wayne This is where the prompt is constructed
 export async function constructAutocompletePrompt(
   filepath: string,
   cursorLine: number,

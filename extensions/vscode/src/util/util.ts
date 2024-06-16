@@ -117,3 +117,20 @@ export function getExtensionVersion(): string {
   const extension = vscode.extensions.getExtension("continue.continue");
   return extension?.packageJSON.version || "0.1.0";
 }
+
+export function getTwoUniqueRandomInts(min: number, max: number): [number, number] {
+  if (max - min < 1) {
+    throw new Error("Range must be large enough to have two unique numbers.");
+  }
+
+  // Generate the first random number
+  const first = Math.floor(Math.random() * (max - min + 1)) + min;
+
+  // Generate the second random number by avoiding the first number
+  const second = (() => {
+    const random = Math.floor(Math.random() * (max - min)) + min;
+    return random >= first ? random + 1 : random;
+  })();
+
+  return [first, second];
+}

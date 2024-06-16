@@ -12,6 +12,8 @@ import { getDefinitionsFromLsp } from "./lsp";
 import { RecentlyEditedTracker } from "./recentlyEdited";
 import { setupStatusBar, stopStatusBarLoading } from "./statusBar";
 import { integer } from "vscode-languageclient";
+import { getTwoUniqueRandomInts } from "../util/util";
+import { get } from "request";
 
 interface VsCodeCompletionInput {
   document: vscode.TextDocument;
@@ -205,26 +207,37 @@ export class ContinueCompletionProvider
       setupStatusBar(true, true);
       // TODO: Wayne. This is where the inline completion happens in the vscode extension.
       // It calls on the inline competion items function in core
-      const randomInt = (min: integer, max: integer) => 
-        Math.floor(Math.random() * (max - min + 1)) + min;
-      const providerIndex = randomInt(0, this.completionProviders.length - 1);
+      const providerIndices = getTwoUniqueRandomInts(0, this.completionProviders.length - 1);
 
-      const outcome =
-        await this.completionProviders[providerIndex].provideInlineCompletionItems(
+      const outcome1 =
+        await this.completionProviders[providerIndices[0]].provideInlineCompletionItems(
           input,
           signal,
       );
 
-      if (outcome) {
-        console.log(outcome.completion);
-        console.log(outcome.modelName);
-        console.log(outcome.modelProvider);
+      const outcome2 =
+        await this.completionProviders[providerIndices[1]].provideInlineCompletionItems(
+          input,
+          signal,
+      );
+
+      if (outcome1) {
+        console.log(outcome1.completion);
+        console.log(outcome1.modelName);
+        console.log(outcome1.modelProvider);
       }
 
-      if (!outcome || !outcome.completion) {
+      if (outcome2) {
+        console.log(outcome2.completion);
+        console.log(outcome2.modelName);
+        console.log(outcome2.modelProvider);
+      }
+
+      // Fails if both aren't successful
+      if ((!outcome1 || !outcome1.completion) || (!outcome2 || !outcome2.completion)) {
         return null;
-      }
-
+      } 
+      
       // VS Code displays dependent on selectedCompletionInfo (their docstring below)
       // We should first always make sure we have a valid completion, but if it goes wrong we
       // want telemetry to be correct
@@ -239,55 +252,83 @@ export class ContinueCompletionProvider
        * Inline completion providers are requested again whenever the selected item changes.
        */
       if (selectedCompletionInfo) {
-        outcome.completion = selectedCompletionInfo.text + outcome.completion;
+        outcome1.completion = selectedCompletionInfo.text + outcome1.completion;
+        outcome2.completion = selectedCompletionInfo.text + outcome2.completion;
       }
-      const willDisplay = this.willDisplay(
+      const willDisplay1 = this.willDisplay(
         document,
         selectedCompletionInfo,
         signal,
-        outcome,
+        outcome1,
       );
-      if (!willDisplay) {
+      const willDisplay2 = this.willDisplay(
+        document,
+        selectedCompletionInfo,
+        signal,
+        outcome2,
+      );
+      if (!willDisplay1 || !willDisplay2) {
         return null;
       }
 
       // Mark displayed
-      this.completionProviders[providerIndex].markDisplayed(input.completionId, outcome);
-      this._lastShownCompletion = outcome;
+      this.completionProviders[providerIndices[0]].markDisplayed(input.completionId, outcome1);
+      this.completionProviders[providerIndices[1]].markDisplayed(input.completionId, outcome2);
+      this._lastShownCompletion = outcome1;
 
       // Construct the range/text to show
       const startPos = selectedCompletionInfo?.range.start ?? position;
-      const completionRange = new vscode.Range(
+      const completionRange1 = new vscode.Range(
         startPos,
-        startPos.translate(0, outcome.completion.length),
+        startPos.translate(0, outcome1.completion.length),
+      );
+      const completionRange2 = new vscode.Range(
+        startPos,
+        startPos.translate(0, outcome2.completion.length),
+      );
+
+      const combinedCompletion = 
+`${outcome1.completion}
+Outcome 1 ==== Outcome 2
+${outcome2.completion}
+`;
+
+      const lines = combinedCompletion.split('\n');
+      const combinedLength = lines.reduce((acc, line) => acc + line.length + 1, 0) - 1;
+
+      const endPos = startPos.translate(0, combinedLength);
+      const combinedCompletionRange = new vscode.Range(startPos, endPos);
+
+      const combinedCompletionItem = new vscode.InlineCompletionItem(
+        combinedCompletion,
+        combinedCompletionRange
       );
 
       const completionItem1 = new vscode.InlineCompletionItem(
-        outcome.completion,
-        completionRange,
+        outcome1.completion,
+        completionRange1,
         {
           title: "Log Autocomplete Outcome",
           command: "continue.logAutocompleteOutcome",
-          arguments: [input.completionId, this.completionProviders[providerIndex]],
+          arguments: [input.completionId, this.completionProviders[providerIndices[0]]],
         },
       );
 
       (completionItem1 as any).completeBracketPairs = true;
 
       const completionItem2 = new vscode.InlineCompletionItem(
-        "testing456",
-        //outcome.completion,
-        completionRange,
+        outcome2.completion,
+        completionRange2,
         {
           title: "Log Autocomplete Outcome",
           command: "continue.logAutocompleteOutcome",
-          arguments: [input.completionId, this.completionProviders[providerIndex]],
+          arguments: [input.completionId, this.completionProviders[providerIndices[1]]],
         },
       );
 
       (completionItem2 as any).completeBracketPairs = true;
 
-      return [completionItem1, completionItem2];
+      return [combinedCompletionItem, completionItem1, completionItem2];
     } finally {
       stopStatusBarLoading();
     }
