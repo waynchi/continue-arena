@@ -251,10 +251,12 @@ export class ContinueCompletionProvider
        *
        * Inline completion providers are requested again whenever the selected item changes.
        */
+      const originalOutcome2Completion = outcome2.completion;
       if (selectedCompletionInfo) {
         outcome1.completion = selectedCompletionInfo.text + outcome1.completion;
         outcome2.completion = selectedCompletionInfo.text + outcome2.completion;
       }
+
       const willDisplay1 = this.willDisplay(
         document,
         selectedCompletionInfo,
@@ -287,11 +289,29 @@ export class ContinueCompletionProvider
         startPos.translate(0, outcome2.completion.length),
       );
 
+      const prefixStart = outcome2.prefix?.lastIndexOf('\n') + 1 || 0;
+      const prefix = outcome2.prefix?.slice(prefixStart) || '';
+
+      // Calculate the indentation after the last newline in the prefix
+      const lastNewlineIndex = prefix.lastIndexOf('\n') ?? -1;
+      const indentationStart = lastNewlineIndex + 1;
+      const indentationEnd = prefix.length;
+
+      let indentation = '';
+      for (let i = indentationStart; i < indentationEnd; i++) {
+        const char = prefix[i];
+        if (char === ' ' || char === '\t') {
+          indentation += char;
+        } else {
+          break;
+        }
+      }
+      const separator = `${indentation}======`;
+
       const combinedCompletion = 
 `${outcome1.completion}
-Outcome 1 ==== Outcome 2
-${outcome2.completion}
-`;
+${separator}
+${prefix}${originalOutcome2Completion}`;
 
       const lines = combinedCompletion.split('\n');
       const combinedLength = lines.reduce((acc, line) => acc + line.length + 1, 0) - 1;

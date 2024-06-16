@@ -2,6 +2,10 @@ class Calculator {
   constructor() {
     this.result = 0;
   }
+  
+  add(number) {
+    this.resu
+  }
 
   subtract(number) {
     this.result 
