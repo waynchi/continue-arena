@@ -13,6 +13,7 @@ import { DiffManager } from "./diff/horizontal";
 import { VerticalPerLineDiffManager } from "./diff/verticalPerLine/manager";
 import { getPlatform } from "./util/util";
 import type { VsCodeWebviewProtocol } from "./webviewProtocol";
+import { uploadArenaDatapoint, convertToArenaAutocompleteOutcome } from "./util/firebaseUpload";
 
 function getFullScreenTab() {
   const tabs = vscode.window.tabGroups.all.flatMap((tabGroup) => tabGroup.tabs);
@@ -522,6 +523,36 @@ const commandsMap: (
       completionProvider: CompletionProvider,
     ) => {
       completionProvider.accept(completionId);
+    },
+    "arena.logFirstOutcomeSuccess": (
+      completionId1: string,
+      completionId2: string,
+      completionProvider1: CompletionProvider,
+      completionProvider2: CompletionProvider,
+    ) => {
+      const outcome1 = completionProvider1.getOutcome(completionId1);
+      const outcome2 = completionProvider2.getOutcome(completionId2);
+      if (outcome1 && outcome2) {
+        const arenaOutcome1 = convertToArenaAutocompleteOutcome(outcome1, true);
+        const arenaOutcome2 = convertToArenaAutocompleteOutcome(outcome2, false);
+        uploadArenaDatapoint(arenaOutcome1, arenaOutcome2);
+      }
+      completionProvider1.accept(completionId1);
+    },
+    "arena.logSecondOutcomeSuccess": (
+      completionId1: string,
+      completionId2: string,
+      completionProvider1: CompletionProvider,
+      completionProvider2: CompletionProvider,
+    ) => {
+      const outcome1 = completionProvider1.getOutcome(completionId1);
+      const outcome2 = completionProvider2.getOutcome(completionId2);
+      if (outcome1 && outcome2) {
+        const arenaOutcome1 = convertToArenaAutocompleteOutcome(outcome1, false);
+        const arenaOutcome2 = convertToArenaAutocompleteOutcome(outcome2, true);
+        uploadArenaDatapoint(arenaOutcome1, arenaOutcome2);
+      }
+      completionProvider2.accept(completionId2);
     },
     "continue.toggleTabAutocompleteEnabled": () => {
       const config = vscode.workspace.getConfiguration("continue");

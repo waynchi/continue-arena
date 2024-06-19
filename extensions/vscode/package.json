@@ -218,6 +218,18 @@
         "category": "Continue",
         "title": "Fix Grammar / Spelling",
         "group": "Continue"
+      },
+      {
+        "command": "arena.selectFirstInlineCompletion",
+        "category": "Continue",
+        "title": "Select First Inline Completion",
+        "group": "Continue"
+      },
+      {
+        "command": "arena.selectSecondInlineCompletion",
+        "category": "Continue",
+        "title": "Select Second Inline Completion",
+        "group": "Continue"
       }
     ],
     "keybindings": [
@@ -282,6 +294,18 @@
         "command": "continue.toggleTabAutocompleteEnabled",
         "mac": "cmd+k cmd+a",
         "key": "ctrl+k ctrl+a"
+      },
+      {
+        "command": "arena.selectFirstInlineCompletion",
+        "mac": "tab",
+        "key": "tab",
+        "when": "editorTextFocus && inlineSuggestionVisible"
+      },
+      {
+        "command": "arena.selectSecondInlineCompletion",
+        "mac": "shift+tab",
+        "key": "shift+tab",
+        "when": "editorTextFocus && inlineSuggestionVisible"
       }
     ],
     "submenus": [
@@ -526,6 +550,7 @@
     "dbinfoz": "^0.1.4",
     "downshift": "^7.6.0",
     "express": "^4.18.2",
+    "firebase": "^10.12.2",
     "fkill": "^8.1.0",
     "follow-redirects": "^1.15.4",
     "handlebars": "^4.7.8",

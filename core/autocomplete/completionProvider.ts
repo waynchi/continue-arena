@@ -513,6 +513,14 @@ export class CompletionProvider {
   private _logRejectionTimeouts = new Map<string, NodeJS.Timeout>();
   private _outcomes = new Map<string, AutocompleteOutcome>();
 
+  public getOutcome(completionId: string) {
+    if (this._outcomes.has(completionId)) {
+      return this._outcomes.get(completionId)!;
+    } else {
+      return undefined;
+    }
+  }
+
   public accept(completionId: string) {
     if (this._logRejectionTimeouts.has(completionId)) {
       clearTimeout(this._logRejectionTimeouts.get(completionId));

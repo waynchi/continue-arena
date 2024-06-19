@@ -43,6 +43,7 @@ export class ContinueCompletionProvider
   }
 
   private completionProviders: CompletionProvider[] = [];
+  private inlineCompletionList: vscode.InlineCompletionList | undefined;
   private recentlyEditedTracker = new RecentlyEditedTracker();
 
   constructor(
@@ -190,7 +191,21 @@ export class ContinueCompletionProvider
         // manuallyPassPrefix = `${diff}\n\nCommit message: `;
       }
 
-      const input: AutocompleteInput = {
+      const input1: AutocompleteInput = {
+        completionId: uuidv4(),
+        filepath: document.uri.fsPath,
+        pos,
+        recentlyEditedFiles: [],
+        recentlyEditedRanges:
+          await this.recentlyEditedTracker.getRecentlyEditedRanges(),
+        clipboardText: clipboardText,
+        manuallyPassFileContents,
+        manuallyPassPrefix,
+        selectedCompletionInfo,
+        injectDetails,
+      };
+
+      const input2: AutocompleteInput = {
         completionId: uuidv4(),
         filepath: document.uri.fsPath,
         pos,
@@ -211,23 +226,25 @@ export class ContinueCompletionProvider
 
       const outcome1 =
         await this.completionProviders[providerIndices[0]].provideInlineCompletionItems(
-          input,
+          input1,
           signal,
       );
 
       const outcome2 =
         await this.completionProviders[providerIndices[1]].provideInlineCompletionItems(
-          input,
+          input2,
           signal,
       );
 
       if (outcome1) {
+        console.log("outcome 1");
         console.log(outcome1.completion);
         console.log(outcome1.modelName);
         console.log(outcome1.modelProvider);
       }
 
       if (outcome2) {
+        console.log("outcome 2");
         console.log(outcome2.completion);
         console.log(outcome2.modelName);
         console.log(outcome2.modelProvider);
@@ -274,8 +291,8 @@ export class ContinueCompletionProvider
       }
 
       // Mark displayed
-      this.completionProviders[providerIndices[0]].markDisplayed(input.completionId, outcome1);
-      this.completionProviders[providerIndices[1]].markDisplayed(input.completionId, outcome2);
+      this.completionProviders[providerIndices[0]].markDisplayed(input1.completionId, outcome1);
+      this.completionProviders[providerIndices[1]].markDisplayed(input2.completionId, outcome2);
       this._lastShownCompletion = outcome1;
 
       // Construct the range/text to show
@@ -329,8 +346,8 @@ ${prefix}${originalOutcome2Completion}`;
         completionRange1,
         {
           title: "Log Autocomplete Outcome",
-          command: "continue.logAutocompleteOutcome",
-          arguments: [input.completionId, this.completionProviders[providerIndices[0]]],
+          command: "arena.logFirstOutcomeSuccess",
+          arguments: [input1.completionId, input2.completionId, this.completionProviders[providerIndices[0]], this.completionProviders[providerIndices[1]]],
         },
       );
 
@@ -341,17 +358,32 @@ ${prefix}${originalOutcome2Completion}`;
         completionRange2,
         {
           title: "Log Autocomplete Outcome",
-          command: "continue.logAutocompleteOutcome",
-          arguments: [input.completionId, this.completionProviders[providerIndices[1]]],
+          command: "arena.logSecondOutcomeSuccess",
+          arguments: [input1.completionId, input2.completionId, this.completionProviders[providerIndices[0]], this.completionProviders[providerIndices[1]]],
         },
       );
 
       (completionItem2 as any).completeBracketPairs = true;
 
-      return [combinedCompletionItem, completionItem1, completionItem2];
+      this.inlineCompletionList = new vscode.InlineCompletionList([combinedCompletionItem, completionItem1, completionItem2]);
+      return this.inlineCompletionList;
     } finally {
       stopStatusBarLoading();
     }
+  }
+
+  public getInlineFirstCompletion() {
+    if (!this.inlineCompletionList) {
+      return undefined
+    }
+    return this.inlineCompletionList?.items[1];
+  }
+
+  public getInlineSecondCompletion() {
+    if (!this.inlineCompletionList) {
+      return undefined
+    }
+    return this.inlineCompletionList?.items[2];
   }
 
   willDisplay(

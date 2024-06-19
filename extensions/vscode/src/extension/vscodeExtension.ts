@@ -143,15 +143,16 @@ export class VsCodeExtension {
 
     // Register inline completion provider
     setupStatusBar(enabled);
+    const continueCompletionProvider = new ContinueCompletionProvider(
+      this.configHandler,
+      this.ide,
+      this.tabAutocompleteModels,
+    );
     context.subscriptions.push(
       vscode.languages.registerInlineCompletionItemProvider(
         [{ pattern: "**" }],
-        new ContinueCompletionProvider(
-          this.configHandler,
-          this.ide,
-          this.tabAutocompleteModels,
-        ),
-      ),
+        continueCompletionProvider
+      )
     );
 
     // Commands
@@ -163,6 +164,17 @@ export class VsCodeExtension {
       this.configHandler,
       this.diffManager,
       this.verticalDiffManager,
+    );
+
+    context.subscriptions.push(
+      vscode.commands.registerCommand('arena.selectFirstInlineCompletion', () => {
+          const completionItem1 = continueCompletionProvider.getInlineFirstCompletion();
+          this.insertCompletionItem(completionItem1);
+      }),
+      vscode.commands.registerCommand('arena.selectSecondInlineCompletion', () => {
+          const completionItem = continueCompletionProvider.getInlineSecondCompletion();
+          this.insertCompletionItem(completionItem);
+      })
     );
 
     registerDebugTracker(this.sidebar.webviewProtocol, this.ide);
@@ -260,5 +272,32 @@ export class VsCodeExtension {
 
   registerCustomContextProvider(contextProvider: IContextProvider) {
     this.configHandler.registerCustomContextProvider(contextProvider);
+  }
+
+  insertCompletionItem(completionItem: vscode.InlineCompletionItem | undefined) {
+    if (!completionItem) {
+        vscode.window.showErrorMessage('No completion item available');
+        return;
+    }
+
+    const editor = vscode.window.activeTextEditor;
+    if (!editor) {
+        vscode.window.showErrorMessage('No active editor');
+        return;
+    }
+
+    const insertText = typeof completionItem.insertText === 'string' ?
+                       completionItem.insertText :
+                       completionItem.insertText.value;
+
+    const range = completionItem.range ?? editor.selection;
+
+    editor.edit((editBuilder) => {
+        editBuilder.replace(range, insertText);
+    }).then(success => {
+        if (success && completionItem.command) {
+            vscode.commands.executeCommand(completionItem.command.command, ...completionItem.command.arguments || []);
+        }
+    });
   }
 }
