@@ -51,9 +51,8 @@ export class ContinueCompletionProvider
     private readonly ide: IDE,
     private readonly tabAutocompleteModels: TabAutocompleteModel[],
   ) {
-    // Wayne TODO change this to create multiple completion providers
-    // one for each model
-    // Also make the tabAutocompleteModel multiple models.
+    // Wayne TODO get the autocompletemodels through the AI
+
     for (const tabAutocompleteModel of tabAutocompleteModels) {
       this.completionProviders.push(new CompletionProvider(
         this.configHandler,
@@ -191,6 +190,8 @@ export class ContinueCompletionProvider
         // manuallyPassPrefix = `${diff}\n\nCommit message: `;
       }
 
+      // Call on API for model choices
+
       const input1: AutocompleteInput = {
         completionId: uuidv4(),
         filepath: document.uri.fsPath,
@@ -323,12 +324,42 @@ export class ContinueCompletionProvider
           break;
         }
       }
-      const separator = `${indentation}======`;
+      const spaceIndentation = " ".repeat(prefix.length)
+      // const separator = `${spaceIndentation}======`;
 
+      let combinedCompletionPrefix = "";
+      if (!(prefix.trim().length === 0)) {
+        // combinedCompletionPrefix = `\n${spaceIndentation}`;
+        combinedCompletionPrefix = `\n${prefix}`;
+      }
+
+      // Option 2
+//       const combinedCompletion = 
+// `${outcome1.completion}
+// ${separator}
+// ${spaceIndentation}${originalOutcome2Completion}`;
+
+      // Option 3
+//       const combinedCompletion = 
+// `${combinedCompletionPrefix}${outcome1.completion}
+// ${separator}
+// ${spaceIndentation}${originalOutcome2Completion}`;
+
+
+      const separator = `${indentation}======`;
+      // Option 4
       const combinedCompletion = 
-`${outcome1.completion}
+`${combinedCompletionPrefix}${outcome1.completion}
 ${separator}
 ${prefix}${originalOutcome2Completion}`;
+
+
+      // Option 1
+// 
+//       const combinedCompletion = 
+// `${outcome1.completion}
+// ${separator}
+// ${prefix}${originalOutcome2Completion}`;
 
       const lines = combinedCompletion.split('\n');
       const combinedLength = lines.reduce((acc, line) => acc + line.length + 1, 0) - 1;
