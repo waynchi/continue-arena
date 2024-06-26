@@ -33,3 +33,4 @@ export const RETRIEVAL_PARAMS = {
 
 // export const SERVER_URL = "http://localhost:3000";
 export const SERVER_URL = "https://proxy-server-blue-l6vsfbzhba-uw.a.run.app";
+export const ARENA_SERVER_URL = "http://treble.cs.cmu.edu:8080";

@@ -66,6 +66,7 @@ class FreeTrial extends BaseLLM {
 
     await this._countTokens(prompt, args.model, true);
 
+    // Wayne this is how they call their model
     const response = await this.fetch(`${SERVER_URL}/stream_complete`, {
       method: "POST",
       headers: await this._getHeaders(),

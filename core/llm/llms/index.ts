@@ -9,6 +9,7 @@ import { IdeSettings } from "../../protocol/ideWebview.js";
 import { DEFAULT_MAX_TOKENS } from "../constants.js";
 import { BaseLLM } from "../index.js";
 import Anthropic from "./Anthropic.js";
+import Arena from "./Arena.js";
 import Bedrock from "./Bedrock.js";
 import Cohere from "./Cohere.js";
 import DeepInfra from "./DeepInfra.js";
@@ -80,6 +81,7 @@ export async function renderTemplatedString(
 
 const LLMs = [
   Anthropic,
+  Arena,
   Cohere,
   FreeTrial,
   Gemini,
@@ -112,6 +114,7 @@ export async function llmFromDescription(
   completionOptions?: BaseCompletionOptions,
   systemMessage?: string,
 ): Promise<BaseLLM | undefined> {
+  // Wayne This is a function that takes in a ModelDescription object and returns a BaseLLM object.
   const cls = LLMs.find((llm) => llm.providerName === desc.provider);
 
   if (!cls) {

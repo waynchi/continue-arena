@@ -20,6 +20,7 @@ import { getBasename, getLastNPathParts } from "../util/index.js";
 import {
   COUNT_COMPLETION_REJECTED_AFTER,
   DEFAULT_AUTOCOMPLETE_OPTS,
+  ARENA_SERVER_URL
 } from "../util/parameters.js";
 import { Telemetry } from "../util/posthog.js";
 import { getRangeInString } from "../util/ranges.js";
@@ -137,6 +138,39 @@ export type GetLspDefinitionsFunction = (
   lang: AutocompleteLanguageInfo,
 ) => Promise<AutocompleteSnippet[]>;
 
+async function selectModels(pairId: string, pairIndex: number): Promise<string> {
+  // Define the endpoint URL
+  const url = `${ARENA_SERVER_URL}/select_models`;
+
+  try {
+    // Prepare the request options
+    const requestOptions: RequestInit = {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ pair_id: pairId })
+    };
+
+    // Send the POST request
+    const response = await fetch(url, requestOptions);
+
+    // Check if the response is successful
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+
+    // Parse the JSON response
+    const data = await response.json();
+    const selectedModel = data.selected_models[pairIndex]
+    return selectedModel;
+  } catch (error) {
+    // Handle errors that occur during the fetch process
+    console.error("Error fetching model selections:", error);
+    throw error;
+  }
+}
+
 export async function getTabCompletion(
   token: AbortSignal,
   options: TabAutocompleteOptions,
@@ -146,6 +180,7 @@ export async function getTabCompletion(
   input: AutocompleteInput,
   getDefinitionsFromLsp: GetLspDefinitionsFunction,
   bracketMatchingService: BracketMatchingService,
+  pairIndex: number,
 ): Promise<AutocompleteOutcome | undefined> {
   const startTime = Date.now();
 
@@ -182,6 +217,10 @@ export async function getTabCompletion(
     llm.model !== TRIAL_FIM_MODEL
   ) {
     llm.model = TRIAL_FIM_MODEL;
+  } else if (llm.providerName === "arena") {
+    // Wayne select the model here
+    llm.model = await selectModels("pairId", pairIndex);
+    llm.completionOptions.model = llm.model;
   }
 
   if (
@@ -351,6 +390,7 @@ export async function getTabCompletion(
       options.multilineCompletions !== "never" &&
       (options.multilineCompletions === "always" || completeMultiline);
 
+    // Wayne This is where the model is called / streamed
     // Try to reuse pending requests if what the user typed matches start of completion
     const generator = generatorReuseManager.getGenerator(
       prefix,
@@ -475,6 +515,7 @@ export class CompletionProvider {
     private readonly getLlm: () => Promise<ILLM | undefined>,
     private readonly _onError: (e: any) => void,
     private readonly getDefinitionsFromLsp: GetLspDefinitionsFunction,
+    private readonly pairIndex: number
   ) {
     this.generatorReuseManager = new GeneratorReuseManager(
       this.onError.bind(this),
@@ -661,6 +702,7 @@ export class CompletionProvider {
         input,
         this.getDefinitionsFromLsp,
         this.bracketMatchingService,
+        this.pairIndex
       );
 
       if (!outcome?.completion) {

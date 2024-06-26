@@ -534,6 +534,7 @@ type TemplateType =
 type ModelProvider =
   | "openai"
   | "free-trial"
+  | "arena"
   | "anthropic"
   | "cohere"
   | "together"

@@ -120,6 +120,7 @@ export class Core {
       getLlm,
       (e) => {},
       (..._) => Promise.resolve([]),
+      0  // Pair index irrelevant here
     );
 
     const on = this.messenger.on.bind(this.messenger);

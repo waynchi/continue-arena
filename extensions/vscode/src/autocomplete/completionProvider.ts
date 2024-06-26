@@ -51,15 +51,18 @@ export class ContinueCompletionProvider
     private readonly ide: IDE,
     private readonly tabAutocompleteModels: TabAutocompleteModel[],
   ) {
-    // Wayne TODO get the autocompletemodels through the AI
 
-    for (const tabAutocompleteModel of tabAutocompleteModels) {
+    // Wayne TODO Might want to fix something here?
+    // Since now models are being chosen on the backend server.
+    for (let i = 0; i < 2; i++) {
+      const tabAutocompleteModel = tabAutocompleteModels[i];
       this.completionProviders.push(new CompletionProvider(
         this.configHandler,
         this.ide,
         tabAutocompleteModel.get.bind(tabAutocompleteModel),
         this.onError.bind(this),
         getDefinitionsFromLsp,
+        i
       ));
     }
     // TODO Test that the models are being loaded correctly / multiple models are being loaded.
@@ -223,16 +226,16 @@ export class ContinueCompletionProvider
       setupStatusBar(true, true);
       // TODO: Wayne. This is where the inline completion happens in the vscode extension.
       // It calls on the inline competion items function in core
-      const providerIndices = getTwoUniqueRandomInts(0, this.completionProviders.length - 1);
+      // const providerIndices = getTwoUniqueRandomInts(0, this.completionProviders.length - 1);
 
       const outcome1 =
-        await this.completionProviders[providerIndices[0]].provideInlineCompletionItems(
+        await this.completionProviders[0].provideInlineCompletionItems(
           input1,
           signal,
       );
 
       const outcome2 =
-        await this.completionProviders[providerIndices[1]].provideInlineCompletionItems(
+        await this.completionProviders[1].provideInlineCompletionItems(
           input2,
           signal,
       );
@@ -292,8 +295,8 @@ export class ContinueCompletionProvider
       }
 
       // Mark displayed
-      this.completionProviders[providerIndices[0]].markDisplayed(input1.completionId, outcome1);
-      this.completionProviders[providerIndices[1]].markDisplayed(input2.completionId, outcome2);
+      this.completionProviders[0].markDisplayed(input1.completionId, outcome1);
+      this.completionProviders[1].markDisplayed(input2.completionId, outcome2);
       this._lastShownCompletion = outcome1;
 
       // Construct the range/text to show
@@ -378,7 +381,7 @@ ${prefix}${originalOutcome2Completion}`;
         {
           title: "Log Autocomplete Outcome",
           command: "arena.logFirstOutcomeSuccess",
-          arguments: [input1.completionId, input2.completionId, this.completionProviders[providerIndices[0]], this.completionProviders[providerIndices[1]]],
+          arguments: [input1.completionId, input2.completionId, this.completionProviders[0], this.completionProviders[1]],
         },
       );
 
@@ -390,7 +393,7 @@ ${prefix}${originalOutcome2Completion}`;
         {
           title: "Log Autocomplete Outcome",
           command: "arena.logSecondOutcomeSuccess",
-          arguments: [input1.completionId, input2.completionId, this.completionProviders[providerIndices[0]], this.completionProviders[providerIndices[1]]],
+          arguments: [input1.completionId, input2.completionId, this.completionProviders[0], this.completionProviders[1]],
         },
       );
 
