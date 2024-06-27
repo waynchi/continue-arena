@@ -447,6 +447,7 @@ export class Core {
         await this.completionProvider.provideInlineCompletionItems(
           msg.data,
           undefined,
+          "pairId" // Irrelevant in this case
         );
       return outcome ? [outcome.completion] : [];
     });

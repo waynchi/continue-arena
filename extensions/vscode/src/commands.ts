@@ -13,7 +13,7 @@ import { DiffManager } from "./diff/horizontal";
 import { VerticalPerLineDiffManager } from "./diff/verticalPerLine/manager";
 import { getPlatform } from "./util/util";
 import type { VsCodeWebviewProtocol } from "./webviewProtocol";
-import { uploadArenaDatapoint, convertToArenaAutocompleteOutcome } from "./util/firebaseUpload";
+import { uploadArenaOutcomes, convertToArenaAutocompleteOutcome } from "core/util/arenaUtils";
 
 function getFullScreenTab() {
   const tabs = vscode.window.tabGroups.all.flatMap((tabGroup) => tabGroup.tabs);
@@ -529,13 +529,14 @@ const commandsMap: (
       completionId2: string,
       completionProvider1: CompletionProvider,
       completionProvider2: CompletionProvider,
+      pairId: string,
     ) => {
       const outcome1 = completionProvider1.getOutcome(completionId1);
       const outcome2 = completionProvider2.getOutcome(completionId2);
       if (outcome1 && outcome2) {
         const arenaOutcome1 = convertToArenaAutocompleteOutcome(outcome1, true);
         const arenaOutcome2 = convertToArenaAutocompleteOutcome(outcome2, false);
-        uploadArenaDatapoint(arenaOutcome1, arenaOutcome2);
+        uploadArenaOutcomes(arenaOutcome1, arenaOutcome2, pairId);
       }
       completionProvider1.accept(completionId1);
     },
@@ -544,13 +545,14 @@ const commandsMap: (
       completionId2: string,
       completionProvider1: CompletionProvider,
       completionProvider2: CompletionProvider,
+      pairId: string,
     ) => {
       const outcome1 = completionProvider1.getOutcome(completionId1);
       const outcome2 = completionProvider2.getOutcome(completionId2);
       if (outcome1 && outcome2) {
         const arenaOutcome1 = convertToArenaAutocompleteOutcome(outcome1, false);
         const arenaOutcome2 = convertToArenaAutocompleteOutcome(outcome2, true);
-        uploadArenaDatapoint(arenaOutcome1, arenaOutcome2);
+        uploadArenaOutcomes(arenaOutcome1, arenaOutcome2, pairId);
       }
       completionProvider2.accept(completionId2);
     },

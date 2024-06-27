@@ -49,6 +49,7 @@ import { AutocompleteSnippet } from "./ranking.js";
 import { RecentlyEditedRange } from "./recentlyEdited.js";
 import { getTemplateForModel } from "./templates.js";
 import { GeneratorReuseManager } from "./util.js";
+import { uploadArenaCompletion } from "../util/arenaUtils.js";
 
 export interface AutocompleteInput {
   completionId: string;
@@ -180,6 +181,7 @@ export async function getTabCompletion(
   input: AutocompleteInput,
   getDefinitionsFromLsp: GetLspDefinitionsFunction,
   bracketMatchingService: BracketMatchingService,
+  pairId: string,
   pairIndex: number,
 ): Promise<AutocompleteOutcome | undefined> {
   const startTime = Date.now();
@@ -219,7 +221,7 @@ export async function getTabCompletion(
     llm.model = TRIAL_FIM_MODEL;
   } else if (llm.providerName === "arena") {
     // Wayne select the model here
-    llm.model = await selectModels("pairId", pairIndex);
+    llm.model = await selectModels(pairId, pairIndex);
     llm.completionOptions.model = llm.model;
   }
 
@@ -482,8 +484,23 @@ export async function getTabCompletion(
     if (!processedCompletion) {
       return undefined;
     }
+
     completion = processedCompletion;
   }
+
+  // Wayne upload to the server
+  // PUT function to upload the completion to the server
+  uploadArenaCompletion({
+    pair_id: pairId,
+    completion: completion,
+    completion_id: input.completionId,
+    user_id: await ide.getUniqueId(),
+    timestamp: Date.now(),
+    prompt,
+    provider: llm.providerName,
+    model: llm.model
+  });
+
 
   const time = Date.now() - startTime;
   return {
@@ -602,6 +619,7 @@ export class CompletionProvider {
   public async provideInlineCompletionItems(
     input: AutocompleteInput,
     token: AbortSignal | undefined,
+    pairId: string
   ): Promise<AutocompleteOutcome | undefined> {
     try {
       // Debounce
@@ -702,6 +720,7 @@ export class CompletionProvider {
         input,
         this.getDefinitionsFromLsp,
         this.bracketMatchingService,
+        pairId,
         this.pairIndex
       );
 

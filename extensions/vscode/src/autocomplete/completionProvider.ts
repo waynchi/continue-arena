@@ -228,16 +228,20 @@ export class ContinueCompletionProvider
       // It calls on the inline competion items function in core
       // const providerIndices = getTwoUniqueRandomInts(0, this.completionProviders.length - 1);
 
+      const pairId = uuidv4();
+
       const outcome1 =
         await this.completionProviders[0].provideInlineCompletionItems(
           input1,
           signal,
+          pairId
       );
 
       const outcome2 =
         await this.completionProviders[1].provideInlineCompletionItems(
           input2,
           signal,
+          pairId
       );
 
       if (outcome1) {
@@ -381,7 +385,7 @@ ${prefix}${originalOutcome2Completion}`;
         {
           title: "Log Autocomplete Outcome",
           command: "arena.logFirstOutcomeSuccess",
-          arguments: [input1.completionId, input2.completionId, this.completionProviders[0], this.completionProviders[1]],
+          arguments: [input1.completionId, input2.completionId, this.completionProviders[0], this.completionProviders[1], pairId],
         },
       );
 
@@ -393,7 +397,7 @@ ${prefix}${originalOutcome2Completion}`;
         {
           title: "Log Autocomplete Outcome",
           command: "arena.logSecondOutcomeSuccess",
-          arguments: [input1.completionId, input2.completionId, this.completionProviders[0], this.completionProviders[1]],
+          arguments: [input1.completionId, input2.completionId, this.completionProviders[0], this.completionProviders[1], pairId],
         },
       );
 
