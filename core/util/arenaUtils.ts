@@ -17,6 +17,9 @@ export interface ArenaCompletion {
     completion: string;
     model: string;
     provider: string;
+    temperature?: number;
+    top_p?: number;
+    max_tokens?: number;
     version?: string;
 }
 

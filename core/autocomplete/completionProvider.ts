@@ -498,7 +498,10 @@ export async function getTabCompletion(
     timestamp: Date.now(),
     prompt,
     provider: llm.providerName,
-    model: llm.model
+    model: llm.model,
+    temperature: llm.completionOptions.temperature,
+    top_p: llm.completionOptions.topP,
+    max_tokens: llm.completionOptions.maxTokens,
   });
 
 
