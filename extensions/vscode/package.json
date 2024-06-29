@@ -1,23 +1,23 @@
 {
-  "name": "continue",
+  "name": "code-arena",
   "icon": "media/icon.png",
-  "version": "0.9.154",
+  "version": "0.1.001",
   "repository": {
     "type": "git",
-    "url": "https://github.com/continuedev/continue"
+    "url": "https://github.com/waynchi/continue-arena"
   },
   "extensionKind": [
     "ui",
     "workspace"
   ],
   "bugs": {
-    "url": "https://github.com/continuedev/continue/issues",
-    "email": "nate@continue.dev"
+    "url": "https://github.com/waynchi/continue-arena/issues",
+    "email": "waynechi@andrew.cmu.edu"
   },
-  "homepage": "https://continue.dev",
+  "homepage": "https://www.waynechi.com",
   "qna": "https://github.com/continuedev/continue/issues/new/choose",
   "license": "Apache-2.0",
-  "displayName": "Continue - Codestral, GPT-4o, and more",
+  "displayName": "CodeArena",
   "pricing": "Free",
   "description": "Open-source autopilot - build your own AI software development system",
   "publisher": "Continue",
