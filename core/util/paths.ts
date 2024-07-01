@@ -7,8 +7,8 @@ import Types from "../config/types.js";
 import { IdeType, SerializedContinueConfig } from "../index.js";
 
 export function getContinueGlobalPath(): string {
-  // This is ~/.continue on mac/linux
-  const continuePath = path.join(os.homedir(), ".continue");
+  // This is ~/.arena on mac/linux
+  const continuePath = path.join(os.homedir(), ".arena");
   if (!fs.existsSync(continuePath)) {
     fs.mkdirSync(continuePath);
   }

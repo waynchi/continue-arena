@@ -234,12 +234,7 @@ export async function constructAutocompletePrompt(
     prefix,
     suffix,
     useFim: true,
-    completeMultiline: await shouldCompleteMultiline(
-      filepath,
-      fullPrefix,
-      fullSuffix,
-      language,
-    ),
+    completeMultiline: true,
     snippets,
   };
 }

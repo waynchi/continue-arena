@@ -43,10 +43,27 @@ export const defaultConfig: SerializedContinueConfig = {
     },
   ],
   tabAutocompleteModel: {
-    title: "Starcoder2 3b",
-    provider: "ollama",
-    model: "starcoder2:3b",
+    title: "Arena",
+    provider: "arena",
+    model: "arena",
   },
+  tabAutocompleteModels: [
+    {
+      title: "Arena",
+      provider: "arena",
+      model: "arena",
+    },
+    {
+      title: "Arena",
+      provider: "arena",
+      model: "arena",
+    }
+  ],
+  tabAutocompleteOptions: {
+    "useSuffix": false,
+    "multilineCompletions": "always",
+    "useCache": false
+  }
 };
 
 export const defaultConfigJetBrains: SerializedContinueConfig = {
